@@ -2,24 +2,20 @@
 FROM alpine:3.19
 
 # Install necessary packages:
-# - curl and unzip to fetch and unpack Consul binary
-# - nginx for reverse‐proxying
-# - bash and libc6-compat for shell scripting compatibility
+# - curl + unzip to fetch Consul
+# - nginx for reverse‐proxy
+# - bash + libc6-compat for scripting support
 RUN apk add --no-cache curl unzip nginx bash libc6-compat \
-    # Download Consul binary
     && curl -Lo consul.zip https://releases.hashicorp.com/consul/1.18.1/consul_1.18.1_linux_amd64.zip \
-    # Unzip and move the Consul executable into PATH
     && unzip consul.zip \
     && mv consul /usr/local/bin/consul \
     && rm consul.zip
 
-# Copy our custom Nginx configuration into the container
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Overwrite the main nginx.conf with our own full config
+COPY nginx.conf /etc/nginx/nginx.conf
 
-# Expose port 8080 (Clever Cloud will bind to this port)
+# Expose port 8080 (used by Clever Cloud)
 EXPOSE 8080
 
-# Start both Consul (in dev mode, listening on all interfaces) and Nginx
-# - Consul listens internally on port 8500
-# - Nginx listens on port 8080 and proxies to Consul
+# Start Consul (dev mode, HTTP on 8500) and Nginx (HTTP on 8080)
 CMD sh -c "consul agent -dev -client=0.0.0.0 & nginx -g 'daemon off;'"
